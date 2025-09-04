@@ -1,6 +1,9 @@
 package com.backendCloud.Backend.Controller;
 
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,11 +20,32 @@ public class UserController {
     UserService userService;
 
     // add user with email and password
-    @PostMapping("/addUser")
-    public User addUser(@RequestBody User newUser) {
+    @PostMapping("/registerUser")
+    public User Register(@RequestBody User newUser) {
         System.out.println("UserController: addUser called with user: " + newUser.getUsername());
         return userService.addUser(newUser);
     }
-    
+
+    // login user with email and password
+    @GetMapping("/loginUser")
+    public String loginUser(@RequestBody Map<String, String> body) {
+        System.out.println("UserController: loginUser called with user: " + body.get("username"));
+        String email = body.get("email");
+        String password = body.get("password");
+
+        boolean valid = userService.validateUser(email, password);
+        if (valid) {
+            return "Login successful";
+        } else {
+            return "Invalid username or password";
+        }
+
+    }
+
+    // delete users
+    @GetMapping("/deleteAllUsers")
+    public String deleteUsers() {
+        return userService.deleteAllUsers();
+    }
     
 }
