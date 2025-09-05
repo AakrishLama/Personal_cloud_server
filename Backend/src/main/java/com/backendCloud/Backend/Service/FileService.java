@@ -1,10 +1,13 @@
 package com.backendCloud.Backend.Service;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -15,12 +18,15 @@ import com.backendCloud.Backend.Repository.FileDocumentRepository;
 public class FileService {
 
     private final FileDocumentRepository fileRepo;
+    private final ResourceLoader resourceLoader; // Inject ResourceLoader
 
-    public FileService(FileDocumentRepository fileRepo) {
+    // Use constructor injection for both dependencies
+    public FileService(FileDocumentRepository fileRepo, ResourceLoader resourceLoader) {
         this.fileRepo = fileRepo;
+        this.resourceLoader = resourceLoader;
     }
 
-    @Value("${file.upload-dir}")
+    @Value("${file.upload-dir:uploads}") // default to "uploads" if not set
     private String uploadDir;
 
     public FileDocument storeFile(MultipartFile file, String ownerId) {
@@ -34,15 +40,21 @@ public class FileService {
                 throw new RuntimeException("Owner ID cannot be null or empty");
             }
 
-            // Create file path
-            String filePath = uploadDir + "/" + ownerId + "/" + file.getOriginalFilename();
-            Path path = Paths.get(filePath);
-            
+            // --- KEY CHANGE IS HERE ---
+            // Get the resource directory and then build the full path
+            Resource resource = resourceLoader.getResource("classpath:");
+            Path rootPath = Paths.get(resource.getFile().getAbsolutePath());
+            Path userUploadDir = rootPath.resolve(uploadDir).resolve(ownerId);
+            Path fullFilePath = userUploadDir.resolve(file.getOriginalFilename());
+            System.out.println("**resource**"+resource+ "** rootPath**"+rootPath
+            + "** userUploadDir**"+userUploadDir+" ** fullFilePath**"+fullFilePath);
+            // --- END KEY CHANGE ---
+
             // Create directories if they don't exist
-            Files.createDirectories(path.getParent());
+            Files.createDirectories(userUploadDir);
             
             // Transfer file to destination
-            file.transferTo(path.toFile());
+            file.transferTo(fullFilePath.toFile());
 
             // Create FileDocument and save to MongoDB
             FileDocument fileDoc = new FileDocument();
@@ -50,7 +62,7 @@ public class FileService {
             fileDoc.setFilename(file.getOriginalFilename());
             fileDoc.setContentType(file.getContentType());
             fileDoc.setSize(file.getSize());
-            fileDoc.setStoragePath(filePath);
+            fileDoc.setStoragePath(fullFilePath.toString()); // Store the absolute path
             
             return fileRepo.save(fileDoc);
             
