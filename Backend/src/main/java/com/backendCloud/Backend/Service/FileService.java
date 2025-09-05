@@ -1,13 +1,11 @@
 package com.backendCloud.Backend.Service;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.io.File;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -18,15 +16,12 @@ import com.backendCloud.Backend.Repository.FileDocumentRepository;
 public class FileService {
 
     private final FileDocumentRepository fileRepo;
-    private final ResourceLoader resourceLoader; // Inject ResourceLoader
 
-    // Use constructor injection for both dependencies
-    public FileService(FileDocumentRepository fileRepo, ResourceLoader resourceLoader) {
+    public FileService(FileDocumentRepository fileRepo) {
         this.fileRepo = fileRepo;
-        this.resourceLoader = resourceLoader;
     }
 
-    @Value("${file.upload-dir:uploads}") // default to "uploads" if not set
+    @Value("${file.upload-dir}")
     private String uploadDir;
 
     public FileDocument storeFile(MultipartFile file, String ownerId) {
@@ -40,18 +35,37 @@ public class FileService {
                 throw new RuntimeException("Owner ID cannot be null or empty");
             }
 
-            // --- KEY CHANGE IS HERE ---
-            // Get the resource directory and then build the full path
-            Resource resource = resourceLoader.getResource("classpath:");
-            Path rootPath = Paths.get(resource.getFile().getAbsolutePath());
-            Path userUploadDir = rootPath.resolve(uploadDir).resolve(ownerId);
-            Path fullFilePath = userUploadDir.resolve(file.getOriginalFilename());
-            System.out.println("**resource**"+resource+ "** rootPath**"+rootPath
-            + "** userUploadDir**"+userUploadDir+" ** fullFilePath**"+fullFilePath);
+            // --- KEY CHANGE: Navigate to project's src/main/resources ---
+            // Get the current working directory (where the app is running from)
+            String currentDir = System.getProperty("user.dir");
+            System.out.println("Current working directory: " + currentDir);
+            
+            // If running from Backend/target/classes, navigate back to Backend/
+            File runningDir = new File(currentDir);
+            File backendDir;
+            
+            if (currentDir.endsWith("target/classes")) {
+                // We're running from compiled location
+                backendDir = runningDir.getParentFile().getParentFile(); // Goes to Backend/
+            } else {
+                // We're running from source or another location
+                backendDir = runningDir;
+            }
+            
+            // Build path to src/main/resources/uploads
+            Path resourcesUploadPath = Paths.get(
+                backendDir.getAbsolutePath(),
+                "src", "main", "resources", uploadDir, ownerId
+            );
+            
+            System.out.println("Final upload path: " + resourcesUploadPath);
             // --- END KEY CHANGE ---
 
             // Create directories if they don't exist
-            Files.createDirectories(userUploadDir);
+            Files.createDirectories(resourcesUploadPath);
+            
+            // Create the complete file path
+            Path fullFilePath = resourcesUploadPath.resolve(file.getOriginalFilename());
             
             // Transfer file to destination
             file.transferTo(fullFilePath.toFile());
@@ -62,12 +76,11 @@ public class FileService {
             fileDoc.setFilename(file.getOriginalFilename());
             fileDoc.setContentType(file.getContentType());
             fileDoc.setSize(file.getSize());
-            fileDoc.setStoragePath(fullFilePath.toString()); // Store the absolute path
+            fileDoc.setStoragePath(uploadDir + "/" + ownerId + "/" + file.getOriginalFilename());
             
             return fileRepo.save(fileDoc);
             
         } catch (Exception e) {
-            // Log the actual error for debugging
             System.err.println("Error storing file: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Could not store file. Error: " + e.getMessage(), e);
