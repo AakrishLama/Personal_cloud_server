@@ -3,6 +3,7 @@ package com.backendCloud.Backend.Service;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.io.File;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -85,5 +86,9 @@ public class FileService {
             e.printStackTrace();
             throw new RuntimeException("Could not store file. Error: " + e.getMessage(), e);
         }
+    }
+
+    public List<FileDocument> getFilesByOwner(String ownerId) {
+        return fileRepo.findByOwnerId(ownerId);
     }
 }
