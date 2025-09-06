@@ -3,6 +3,7 @@ package com.backendCloud.Backend.Controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -54,6 +55,21 @@ public class FileController {
     public ResponseEntity<List<FileDocument>> getFilesByOwner(@PathVariable String ownerId) {
         List<FileDocument> files = fileService.getFilesByOwner(ownerId);
         return ResponseEntity.ok(files);
+    }
+
+    // Download file by their file id
+    @GetMapping("/download/{fileId}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileId){
+        try {
+            
+            System.out.println("ran the downloadFile in controller");
+            return fileService.downloadFile(fileId);
+        } catch (Exception e) {
+            // TODO: handle exception
+            System.err.println("Error in downloadFile as a catch in controller: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 
 
