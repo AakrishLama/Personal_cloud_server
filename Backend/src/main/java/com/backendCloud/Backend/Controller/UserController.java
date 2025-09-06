@@ -29,7 +29,7 @@ public class UserController {
     }
 
     // login user with email and password
-    @GetMapping("/loginUser")
+    @PostMapping("/loginUser")
     public String loginUser(@RequestBody Map<String, String> body) {
         System.out.println("UserController: loginUser called with user: " + body.get("username"));
         String email = body.get("email");
