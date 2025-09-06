@@ -124,4 +124,10 @@ public class FileService {
             throw new RuntimeException("Error downloading file: " + e.getMessage(), e);
         }
     }
+
+    // get all the files from the database
+    public ResponseEntity<List<FileDocument>> getAllFiles() {
+        List<FileDocument> files = fileRepo.findAll();
+        return ResponseEntity.ok(files);
+    }
 }

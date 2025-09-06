@@ -59,6 +59,13 @@ public class FileController {
         return ResponseEntity.ok(files);
     }
 
+    // get all the files from the database
+    @GetMapping("/all-files")
+    public ResponseEntity<List<FileDocument>> getAllFiles() {
+        return fileService.getAllFiles();
+    }
+
+
     // Download file by their file id
     @GetMapping("/download/{fileId}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileId){
