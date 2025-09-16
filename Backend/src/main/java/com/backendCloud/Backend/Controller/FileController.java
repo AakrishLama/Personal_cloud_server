@@ -7,6 +7,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -65,19 +66,30 @@ public class FileController {
         return fileService.getAllFiles();
     }
 
-
     // Download file by their file id
     @GetMapping("/download/{fileId}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileId){
         try {
-            
             System.out.println("ran the downloadFile in controller");
             return fileService.downloadFile(fileId);
         } catch (Exception e) {
-            // TODO: handle exception
             System.err.println("Error in downloadFile as a catch in controller: " + e.getMessage());
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // Delete file by file id
+    @DeleteMapping("/delete/{fileId}")
+    public ResponseEntity<?> deleteFile(@PathVariable String fileId) {
+        try {
+            fileService.deleteFile(fileId);
+            return ResponseEntity.ok().body("File deleted successfully");
+        } catch (Exception e) {
+            System.err.println("Error in deleteFile: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error deleting file: " + e.getMessage());
         }
     }
 }
