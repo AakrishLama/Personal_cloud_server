@@ -45,13 +45,16 @@ public class UserService {
 
     public String deleteAllUsers() {
         // TODO Auto-generated method stub
-        if(userRepository.count() == 0) {
+        if (userRepository.count() == 0) {
             return "No users to delete";
         }
         userRepository.deleteAll();
         return "All users deleted";
     }
 
-
-
+    public List<User> getAllUsers() {
+        // TODO Auto-generated method stub
+        List<User> users = userRepository.findAll();
+        return users;
+    }
 }

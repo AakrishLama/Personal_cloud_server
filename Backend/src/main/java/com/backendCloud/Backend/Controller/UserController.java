@@ -1,5 +1,6 @@
 package com.backendCloud.Backend.Controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +49,12 @@ public class UserController {
     @GetMapping("/deleteAllUsers")
     public String deleteUsers() {
         return userService.deleteAllUsers();
+    }
+
+    // get all users in the database
+    @GetMapping("/getAllUsers")
+    public List<User> getAllUsers() {
+        return userService.getAllUsers();
     }
     
 }
