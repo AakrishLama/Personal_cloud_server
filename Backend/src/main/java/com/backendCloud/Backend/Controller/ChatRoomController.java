@@ -90,10 +90,10 @@ public class ChatRoomController {
         String chatTopic = "/topic/" + room.getId();
         messagingTemplate.convertAndSend(chatTopic, chatMessage);
 
-        // log for debug
-        System.out.println("Sent message to topic: " + chatTopic);
-        System.out.println("Message: " + chatMessage.getContent());
-        System.out.println("Room ID: " + room.getId());
+        // // log for debug
+        // System.out.println("Sent message to topic: " + chatTopic);
+        // System.out.println("Message: " + chatMessage.getContent());
+        // System.out.println("Room ID: " + room.getId());
     }
 
     // get chat history
