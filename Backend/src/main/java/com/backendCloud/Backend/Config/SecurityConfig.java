@@ -15,9 +15,8 @@ public class SecurityConfig {
         http
             .csrf(csrf -> csrf.disable()) // disable CSRF
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll() // allow all requests without authentication
+                .anyRequest().permitAll()
             );
-
         return http.build();
     }
 
@@ -25,5 +24,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
 }

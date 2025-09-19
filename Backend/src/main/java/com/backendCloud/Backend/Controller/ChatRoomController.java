@@ -23,7 +23,6 @@ import com.backendCloud.Backend.Model.ChatRoom;
 import com.backendCloud.Backend.Repository.ChatRoomRepository;
 
 @RestController
-@CrossOrigin(origins = "*")
 public class ChatRoomController {
 
     @Autowired
