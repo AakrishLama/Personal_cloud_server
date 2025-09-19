@@ -12,6 +12,7 @@ import org.springframework.data.mongodb.core.aggregation.ConvertOperators.Conver
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -82,25 +83,27 @@ public class ChatRoomController {
         // add the messages to the chatroom
         chatMessage.setTimestamp(getNowDateAndTime());
         room.getMessages().add(chatMessage);
-        chatRoomRepository.save(room);
+        room = chatRoomRepository.save(room);
 
-        // send the message to the both participants
-        messagingTemplate.convertAndSendToUser(receiver,
-         "/queue/messages",
-          chatMessage);
-        messagingTemplate.convertAndSendToUser(sender,
-         "/queue/messages",
-          chatMessage);
+        
+        // use chatroom id as topic identifier
+        String chatTopic = "/topic/" + room.getId();
+        messagingTemplate.convertAndSend(chatTopic, chatMessage);
+
+        // log for debug
+        System.out.println("Sent message to topic: " + chatTopic);
+        System.out.println("Message: " + chatMessage.getContent());
+        System.out.println("Room ID: " + room.getId());
     }
 
-    // get chat history 
+    // get chat history
     @GetMapping("/history/{user1}/{user2}")
     public ResponseEntity<List<ChatMessage>> getChatHistory(@PathVariable String user1, @PathVariable String user2) {
         Optional<ChatRoom> chatRoom = chatRoomRepository.findByParticipant1AndParticipant2(user1, user2);
-        if(!chatRoom.isPresent()){
+        if (!chatRoom.isPresent()) {
             chatRoom = chatRoomRepository.findByParticipant2AndParticipant1(user1, user2);
         }
-        if(chatRoom.isPresent()){
+        if (chatRoom.isPresent()) {
             return ResponseEntity.ok(chatRoom.get().getMessages());
         }
         return ResponseEntity.ok(null);
