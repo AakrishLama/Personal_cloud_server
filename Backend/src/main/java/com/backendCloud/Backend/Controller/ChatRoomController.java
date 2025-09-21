@@ -1,5 +1,8 @@
 package com.backendCloud.Backend.Controller;
 
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -21,7 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.backendCloud.Backend.Model.ChatMessage;
 import com.backendCloud.Backend.Model.ChatRoom;
+import com.backendCloud.Backend.Model.FileDocument;
 import com.backendCloud.Backend.Repository.ChatRoomRepository;
+import com.backendCloud.Backend.Repository.FileDocumentRepository;
+import com.backendCloud.Backend.Service.FileService;
 
 @RestController
 public class ChatRoomController {
@@ -32,6 +38,15 @@ public class ChatRoomController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
+    private final String baseUploadDir = "/app/uploads";
+
+    // file service and filerepo
+    @Autowired
+    private FileService fileService;
+
+    @Autowired
+    private FileDocumentRepository fileRepo;
+
     // LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd
     // HH:mm:ss"));
     public String getNowDateAndTime() {
@@ -40,7 +55,8 @@ public class ChatRoomController {
 
     // get or create a chat room between two users
     @GetMapping("/room/{user1}/{user2}")
-    public ResponseEntity<ChatRoom> getOrCreateChatRoom(@PathVariable String user1, @PathVariable String user2) {
+    public ResponseEntity<ChatRoom> getOrCreateChatRoom(@PathVariable String user1,
+            @PathVariable String user2) {
         Optional<ChatRoom> existingRoom = chatRoomRepository.findByParticipant1AndParticipant2(user1, user2);
         if (!existingRoom.isPresent()) {
             existingRoom = chatRoomRepository.findByParticipant2AndParticipant1(user1, user2);
@@ -64,6 +80,37 @@ public class ChatRoomController {
         // determine the sender and reciever from the payload
         String sender = chatMessage.getSender();
         String receiver = chatMessage.getReceiver();
+
+        if("FILE".equals(chatMessage.getMessageType())) {
+            // File filePath = new File(baseUploadDir + "/" + sender + "/" + chatMessage.getFileName());
+            try {
+                // navigate to file 
+                Optional<FileDocument> fileDoc = fileService.getFileById(chatMessage.getFileId());
+                if(!fileDoc.isPresent()) {
+                    System.out.println("File not found for user: " + sender);
+                }else{
+                    FileDocument file = fileDoc.get();
+                    if(!file.getOwnerId().equals(sender)) {
+                        System.out.println("not the same owner " + sender);
+                    }
+                    chatMessage.setMessageType(file.getContentType());
+                    chatMessage.setFileName(file.getFilename());
+                    chatMessage.setFileOwnerId(file.getOwnerId());
+                    chatMessage.setPathOfFile(file.getStoragePath());
+                    chatMessage.setFileId(file.getId());
+                }
+                
+            } catch (Exception e) {
+                // TODO: handle exception
+                System.err.println("Error in sendMessage: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+
+        }else{
+            System.out.println("messages is just text");
+        }
+
         // get the chat room between the sender and receiver
         Optional<ChatRoom> chatRoom = chatRoomRepository.findByParticipant1AndParticipant2(sender, receiver);
         if (!chatRoom.isPresent()) {
@@ -85,15 +132,10 @@ public class ChatRoomController {
         room.getMessages().add(chatMessage);
         room = chatRoomRepository.save(room);
 
-        
         // use chatroom id as topic identifier
         String chatTopic = "/topic/" + room.getId();
         messagingTemplate.convertAndSend(chatTopic, chatMessage);
 
-        // // log for debug
-        // System.out.println("Sent message to topic: " + chatTopic);
-        // System.out.println("Message: " + chatMessage.getContent());
-        // System.out.println("Room ID: " + room.getId());
     }
 
     // get chat history

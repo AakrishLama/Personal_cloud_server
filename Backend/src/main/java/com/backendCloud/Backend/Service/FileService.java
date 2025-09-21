@@ -145,4 +145,11 @@ public class FileService {
             throw new RuntimeException("Could not delete file. Error: " + e.getMessage(), e);
         }
     }
+
+    public Optional<FileDocument> getFileById(String fileId) {
+        // TODO Auto-generated method stub
+        return fileRepo.findById(fileId);
+    }
+
+
 }

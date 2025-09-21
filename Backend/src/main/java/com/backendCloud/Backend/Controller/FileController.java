@@ -31,7 +31,7 @@ public class FileController {
     public ResponseEntity<?> uploadFile(@RequestParam("file") MultipartFile file,
             @RequestParam("ownerId") String ownerId) {
         try {
-            // Basic validation
+            // Basic validation 
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("File is empty");
             }
@@ -92,4 +92,5 @@ public class FileController {
                     .body("Error deleting file: " + e.getMessage());
         }
     }
+
 }
